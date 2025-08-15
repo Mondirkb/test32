@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard{% endblock %}
+{% block content %}
+    <h1><b>Welcome</b> {{ first_name }} {{ last_name }}</h1>
+    <hr>
+<!-- "Create or Join Meeting" button -->
+    <div class="create-meeting-button">
+        <form action="{{ url_for('meeting') }}" method="get" style="margin-bottom: 1em;">
+            <label for="roomID">Room ID (optional):</label>
+            <input type="text" id="roomID" name="room_id" placeholder="Enter room ID">
+            <button type="submit" class="btn btn-primary">Create Meeting</button>
+        </form>
+        <a class="btn btn-primary" href="{{ url_for('join') }}">Join Meeting</a>
+        <a class="btn btn-outline-light" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+{% endblock %}

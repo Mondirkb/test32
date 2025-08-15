@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+
+<h2 class="fw-bold mb-3 text-uppercase">Login</h2>
+<p class="text-white-50 mb-3">Sign in with your email and face</p>
+<p class="text-white-50 mb-4"><strong>Note:</strong> Click "Take Photo" to capture your face for authentication. Ensure your face is clearly visible and well-lit.</p>
+
+<form action="{{ url_for('login') }}" method="POST" id="login-form">
+    <!-- Create simple input fields instead of using WTForms -->
+    <div class="webcam-section">
+        <video id="webcam" width="320" height="240" autoplay></video>
+        <canvas id="photo-canvas" width="320" height="240" style="display:none;"></canvas>
+        <img id="photo-preview" width="320" height="240" style="display:none;" />
+        <p id="webcam-status" class="mt-2"></p>
+        <div class="d-flex justify-content-center gap-2">
+            <button type="button" id="take-photo" class="btn btn-custom">Take Photo</button>
+            <button type="button" id="retake-photo" class="btn btn-secondary" style="display:none;">Retake</button>
+        </div>
+    </div>
+
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="mb-4">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+    </div>
+
+
+    <input type="hidden" id="photo-data" name="photo_data">
+
+    <button class="btn btn-custom w-100" type="submit" id="submit-btn" disabled>Login</button>
+</form>
+
+<div class="mt-3">
+    <p class="mb-0 text-white-50">Don't have an account?
+        <a href="{{ url_for('register') }}" class="text-white fw-bold">Register</a>
+    </p>
+</div>
+
+<!-- Example: Basic WebRTC video chat UI -->
+<video id="localVideo" autoplay playsinline></video>
+<video id="remoteVideo" autoplay playsinline></video>
+<button id="startCall">Start Call</button>
+
+<!-- Add this below your video chat UI -->
+<div class="mb-4">
+    <label for="roomID" class="form-label">Room ID</label>
+    <input type="text" class="form-control" id="roomID" name="roomID" placeholder="Enter room ID to join" required>
+</div>
+<button id="joinCall" class="btn btn-custom w-100">Join Call</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('photo-canvas');
+        const photoPreview = document.getElementById('photo-preview');
+        const takePhotoBtn = document.getElementById('take-photo');
+        const retakePhotoBtn = document.getElementById('retake-photo');
+        const submitBtn = document.getElementById('submit-btn');
+        const status = document.getElementById('webcam-status');
+        const photoData = document.getElementById('photo-data');
+        let stream = null;
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({
+                video: { width: 320, height: 240, facingMode: 'user' },
+                audio: false
+            })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = stream;
+                status.textContent = "Camera is ready. Position your face in the frame.";
+                status.style.color = "#ffffff";
+            })
+            .catch(function(err) {
+                console.error("Webcam error:", err);
+                status.textContent = "Webcam not accessible. Grant permissions.";
+                status.style.color = "#ff4d4d";
+                takePhotoBtn.disabled = true;
+            });
+        }
+
+        takePhotoBtn.addEventListener('click', function() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            photoPreview.src = dataUrl;
+            photoPreview.style.display = 'block';
+            video.style.display = 'none';
+            photoData.value = dataUrl;
+            takePhotoBtn.style.display = 'none';
+            retakePhotoBtn.style.display = 'block';
+            submitBtn.disabled = false;
+            status.textContent = "Photo captured!";
+
+            // For debugging
+            console.log("Photo data captured:", photoData.value.substring(0, 50) + "...");
+        });
+
+        retakePhotoBtn.addEventListener('click', function() {
+            photoPreview.style.display = 'none';
+            video.style.display = 'block';
+            photoData.value = '';
+            takePhotoBtn.style.display = 'block';
+            retakePhotoBtn.style.display = 'none';
+            submitBtn.disabled = true;
+            startWebcam();
+        });
+
+        // Add form submission event listener
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            // Stop webcam before submitting
+            if (stream) stream.getTracks().forEach(track => track.stop());
+
+            // Check if photo was taken
+            if (!photoData.value) {
+                event.preventDefault();
+                status.textContent = "Please take a photo before submitting.";
+                status.style.color = "#ff4d4d";
+                return false;
+            }
+
+            // For debugging
+            console.log("Form submitted with photo data length:", photoData.value.length);
+        });
+
+        startWebcam();
+    });
+
+    // --- WebRTC Section ---
+    let localStream, peerConnection;
+    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    let isOfferer = false;
+    const pendingCandidates = [];
+    let roomID = null;
+
+    // Create socket connection ONCE
+    const socket = io("http://localhost:5001");
+
+    // --- Signaling event listeners ---
+    socket.on('ready', async () => {
+        if (peerConnection && isOfferer) {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { room: roomID, offer });
+        }
+    });
+
+    socket.on('offer', async (data) => {
+        if (!isOfferer && peerConnection) {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { room: roomID, answer });
+
+            // Add any buffered ICE candidates
+            pendingCandidates.forEach(async candidate => {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (e) {
+                    console.error('Error adding buffered ice candidate', e);
+                }
+            });
+            pendingCandidates.length = 0;
+        }
+    });
+
+    socket.on('answer', async (data) => {
+        if (isOfferer && peerConnection) {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+            // Add any buffered ICE candidates
+            pendingCandidates.forEach(async candidate => {
+                try {
+                    await peerConnection.addIceCandidate(candidate);
+                } catch (e) {
+                    console.error('Error adding buffered ice candidate', e);
+                }
+            });
+            pendingCandidates.length = 0;
+        }
+    });
+
+    socket.on('ice-candidate', async (data) => {
+        if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+            try {
+                await peerConnection.addIceCandidate(data.candidate);
+            } catch (e) {
+                console.error('Error adding received ice candidate', e);
+            }
+        } else {
+            pendingCandidates.push(data.candidate);
+        }
+    });
+
+    // --- Button handler ---
+    document.getElementById('joinCall').onclick = async () => {
+        roomID = document.getElementById('roomID').value;
+        if (!roomID) {
+            alert("Please enter a room ID.");
+            return;
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+
+        peerConnection = new RTCPeerConnection(servers);
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) socket.emit('ice-candidate', { room: roomID, candidate: event.candidate });
+        };
+
+        peerConnection.ontrack = event => {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+        };
+
+        // Join the room
+        socket.emit('join', { room: roomID });
+
+        // The first user to click "Join Call" becomes the offerer
+        isOfferer = true;
+    };
+</script>
+
+{% endblock %}

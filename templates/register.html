@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+
+<style>
+    .card {
+        background: rgba(0, 0, 0, 0.8) !important; /* Override base.html */
+    }
+
+    .webcam-section video, .webcam-section img {
+        border: 2px solid white;
+        border-radius: 8px;
+    }
+
+    #take-photo, #retake-photo {
+        margin-top: 10px;
+        min-width: 120px;
+    }
+
+    .btn-custom {
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1.1rem;
+        transition: opacity 0.2s;
+    }
+
+    .btn-custom:hover {
+        opacity: 0.9;
+    }
+
+    .form-control {
+        background-color: white;
+        color: #333;
+    }
+
+    .form-label {
+        font-weight: 600;
+    }
+
+    .webcam-section {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .alert {
+        margin-top: 10px;
+    }
+
+    #submit-btn:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+    }
+
+    .text-link {
+        color: #fff;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+</style>
+
+<h2 class="mb-3">Register</h2>
+<p class="text-white-50 mb-4">Create an account & take a photo for verification</p>
+
+<form action="{{ url_for('register') }}" method="POST" id="register-form">
+
+    <div class="webcam-section">
+        <video id="webcam" width="320" height="240" autoplay></video>
+        <canvas id="photo-canvas" width="320" height="240" style="display:none;"></canvas>
+        <img id="photo-preview" width="320" height="240" style="display:none;" />
+        <p id="webcam-status" class="mt-2 text-warning"></p>
+
+        <div class="d-flex justify-content-center gap-2">
+            <button type="button" id="take-photo" class="btn btn-custom">Take Photo</button>
+            <button type="button" id="retake-photo" class="btn btn-secondary" style="display:none;">Retake</button>
+        </div>
+    </div>
+
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-group">
+        <label for="first_name" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter first name" required>
+    </div>
+    <div class="form-group">
+        <label for="last_name" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter last name" required>
+    </div>
+    <div class="form-group">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+    </div>
+    <div class="form-group">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
+    </div>
+
+
+    <input type="hidden" id="photo-data" name="photo_data">
+
+    <button class="btn btn-custom w-100" type="submit" id="submit-btn" disabled>Register</button>
+</form>
+
+<div class="mt-3">
+    <p class="text-white-50">Already have an account?
+        <a href="{{ url_for('login') }}" class="text-link">Login</a>
+    </p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('photo-canvas');
+        const photoPreview = document.getElementById('photo-preview');
+        const takePhotoBtn = document.getElementById('take-photo');
+        const retakePhotoBtn = document.getElementById('retake-photo');
+        const submitBtn = document.getElementById('submit-btn');
+        const status = document.getElementById('webcam-status');
+        const photoData = document.getElementById('photo-data');
+        let stream = null;
+
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({
+                video: { width: 320, height: 240, facingMode: 'user' },
+                audio: false
+            })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = stream;
+                status.textContent = "Camera is ready. Position your face.";
+                status.style.color = "#ffffff";
+            })
+            .catch(function(err) {
+                console.error("Webcam error:", err);
+                status.textContent = "Webcam not accessible. Grant permissions.";
+                status.style.color = "#ff4d4d";
+                takePhotoBtn.disabled = true;
+            });
+        }
+
+        takePhotoBtn.addEventListener('click', function() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            photoPreview.src = dataUrl;
+            photoPreview.style.display = 'block';
+            video.style.display = 'none';
+            photoData.value = dataUrl;
+            takePhotoBtn.style.display = 'none';
+            retakePhotoBtn.style.display = 'inline-block';
+            submitBtn.disabled = false;
+            status.textContent = "Photo captured!";
+            if (stream) stream.getTracks().forEach(track => track.stop());
+        });
+
+        retakePhotoBtn.addEventListener('click', function() {
+            photoPreview.style.display = 'none';
+            video.style.display = 'block';
+            photoData.value = '';
+            takePhotoBtn.style.display = 'inline-block';
+            retakePhotoBtn.style.display = 'none';
+            submitBtn.disabled = true;
+            startWebcam();
+        });
+
+        document.getElementById('register-form').addEventListener('submit', function(event) {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+
+            // Check if photo was taken
+            if (!photoData.value) {
+                event.preventDefault();
+                status.textContent = "Please take a photo before submitting.";
+                status.style.color = "#ff4d4d";
+                return false;
+            }
+
+            // For debugging
+            console.log("Form submitted with photo data length:", photoData.value.length);
+        });
+
+        startWebcam();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,145 @@
+body {
+    background: #6a11cb;
+    background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
+    background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
+    overflow: hidden;
+}
+
+#root {
+    width: 100vw;
+    height: 100vh;
+}
+
+#root video {
+    outline: none;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+}
+
+.back-to-dashboard {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+}
+
+.back-to-dashboard button {
+    padding: 10px 20px;
+    background-color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Card styling */
+.card.bg-dark {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Form inputs */
+.form-control {
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #6a11cb;
+}
+
+.form-control:focus {
+    border-color: #2575fc;
+    box-shadow: 0 0 5px rgba(37, 117, 252, 0.5);
+}
+
+.form-label {
+    color: #ffffff;
+}
+
+/* Buttons */
+.btn-custom, #take-photo, #submit-btn {
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    transition: opacity 0.2s;
+}
+
+.btn-custom:hover, #take-photo:hover, #submit-btn:hover {
+    opacity: 0.9;
+}
+
+#take-photo:disabled, #submit-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+
+#photo-preview {
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+#webcam-status {
+    color: #ff4d4d;
+    font-size: 0.9rem;
+}
+
+
+.alert {
+    margin-bottom: 1rem;
+}
+
+.alert-danger {
+    background: #ff4d4d;
+    color: white;
+}
+
+.alert-success {
+    background: #28a745;
+    color: white;
+}
+
+/* Ensure webcam section */
+.webcam-section {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+#take-photo {
+    margin-top: 10px;
+}
+
+
+
+
+
+#year {
+    font-weight: bold;
+}
+
+
+#register-page {
+    background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
+    overflow: hidden;
+}
+
+#register-page .card.bg-dark {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+#register-page .form-control {
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #6a11cb;
+}
+
+
+.footer {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    font-size: 0.9rem;
+    width: auto;
+}

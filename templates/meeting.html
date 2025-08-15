@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Meeting Room{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Meeting Room: {{ request.args.get('room_id') }}</h2>
+    <div id="statusMsg" class="alert alert-info">Waiting for connection...</div>
+    <video id="localVideo" autoplay muted style="width: 45%;"></video>
+    <video id="remoteVideo" autoplay style="width: 45%;"></video>
+    <button type="button" id="startCall" class="btn btn-success">Start Call</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+const socket = io("http://localhost:5001");
+let localStream, peerConnection;
+const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let isOfferer = false;
+const pendingCandidates = [];
+const roomID = "{{ request.args.get('room_id') }}";
+let roomReady = false;
+
+console.log("Meeting page loaded, roomID:", roomID);
+
+document.getElementById('statusMsg').textContent = "Waiting for connection...";
+
+// --- Signaling event listeners ---
+socket.on('ready', async () => {
+    console.log("Received 'ready' from server");
+    isOfferer = true;
+    roomReady = true;
+    document.getElementById('statusMsg').textContent = "Another participant joined. You can start the call!";
+    document.getElementById('startCall').disabled = false;
+    if (peerConnection && isOfferer) {
+        console.log("Creating offer...");
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('offer', { room: roomID, offer });
+    }
+});
+
+socket.on('offer', async (data) => {
+    console.log("Received 'offer' from server");
+    if (!isOfferer && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('answer', { room: roomID, answer });
+        pendingCandidates.forEach(async candidate => {
+            try { await peerConnection.addIceCandidate(candidate); } catch (e) {}
+        });
+        pendingCandidates.length = 0;
+    }
+});
+
+socket.on('answer', async (data) => {
+    console.log("Received 'answer' from server");
+    if (isOfferer && peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        pendingCandidates.forEach(async candidate => {
+            try { await peerConnection.addIceCandidate(candidate); } catch (e) {}
+        });
+        pendingCandidates.length = 0;
+    }
+});
+
+socket.on('ice-candidate', async (data) => {
+    console.log("Received 'ice-candidate' from server");
+    if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+        try { await peerConnection.addIceCandidate(data.candidate); } catch (e) {}
+    } else {
+        pendingCandidates.push(data.candidate);
+    }
+});
+
+document.getElementById('startCall').onclick = async () => {
+    console.log("Start Call clicked");
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+        console.log("Local stream started");
+    } catch (err) {
+        alert("Could not access camera/microphone: " + err.message);
+        return;
+    }
+
+    peerConnection = new RTCPeerConnection(servers);
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            console.log("Sending ICE candidate");
+            socket.emit('ice-candidate', { room: roomID, candidate: event.candidate });
+        }
+    };
+
+    peerConnection.ontrack = event => {
+        console.log("Remote stream received");
+        document.getElementById('remoteVideo').srcObject = event.streams[0];
+        document.getElementById('statusMsg').textContent = "Connection established!";
+    };
+
+    socket.emit('join', { room: roomID });
+    console.log("Sent 'join' to server");
+};
+
+// Disable the button until ready
+document.getElementById('startCall').disabled = true;
+document.getElementById('statusMsg').textContent = "Waiting for another participant to join...";
+</script>
+{% endblock %}
