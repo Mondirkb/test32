@@ -7,7 +7,7 @@
 <p class="text-white-50 mb-4"><strong>Note:</strong> Click "Take Photo" to capture your face for authentication. Ensure your face is clearly visible and well-lit.</p>
 
 <form action="{{ url_for('login') }}" method="POST" id="login-form">
-    <!-- Create simple input fields instead of using WTForms -->
+    <!-- Webcam section -->
     <div class="webcam-section">
         <video id="webcam" width="320" height="240" autoplay></video>
         <canvas id="photo-canvas" width="320" height="240" style="display:none;"></canvas>
@@ -38,7 +38,6 @@
         <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
     </div>
 
-
     <input type="hidden" id="photo-data" name="photo_data">
 
     <button class="btn btn-custom w-100" type="submit" id="submit-btn" disabled>Login</button>
@@ -49,18 +48,6 @@
         <a href="{{ url_for('register') }}" class="text-white fw-bold">Register</a>
     </p>
 </div>
-
-<!-- Example: Basic WebRTC video chat UI -->
-<video id="localVideo" autoplay playsinline></video>
-<video id="remoteVideo" autoplay playsinline></video>
-<button id="startCall">Start Call</button>
-
-<!-- Add this below your video chat UI -->
-<div class="mb-4">
-    <label for="roomID" class="form-label">Room ID</label>
-    <input type="text" class="form-control" id="roomID" name="roomID" placeholder="Enter room ID to join" required>
-</div>
-<button id="joinCall" class="btn btn-custom w-100">Join Call</button>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -106,7 +93,6 @@
             submitBtn.disabled = false;
             status.textContent = "Photo captured!";
 
-            // For debugging
             console.log("Photo data captured:", photoData.value.substring(0, 50) + "...");
         });
 
@@ -133,107 +119,11 @@
                 return false;
             }
 
-            // For debugging
             console.log("Form submitted with photo data length:", photoData.value.length);
         });
 
         startWebcam();
     });
-
-    // --- WebRTC Section ---
-    let localStream, peerConnection;
-    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-    let isOfferer = false;
-    const pendingCandidates = [];
-    let roomID = null;
-
-    // Create socket connection ONCE
-    const socket = io("http://localhost:5001");
-
-    // --- Signaling event listeners ---
-    socket.on('ready', async () => {
-        if (peerConnection && isOfferer) {
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            socket.emit('offer', { room: roomID, offer });
-        }
-    });
-
-    socket.on('offer', async (data) => {
-        if (!isOfferer && peerConnection) {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            socket.emit('answer', { room: roomID, answer });
-
-            // Add any buffered ICE candidates
-            pendingCandidates.forEach(async candidate => {
-                try {
-                    await peerConnection.addIceCandidate(candidate);
-                } catch (e) {
-                    console.error('Error adding buffered ice candidate', e);
-                }
-            });
-            pendingCandidates.length = 0;
-        }
-    });
-
-    socket.on('answer', async (data) => {
-        if (isOfferer && peerConnection) {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-
-            // Add any buffered ICE candidates
-            pendingCandidates.forEach(async candidate => {
-                try {
-                    await peerConnection.addIceCandidate(candidate);
-                } catch (e) {
-                    console.error('Error adding buffered ice candidate', e);
-                }
-            });
-            pendingCandidates.length = 0;
-        }
-    });
-
-    socket.on('ice-candidate', async (data) => {
-        if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-            try {
-                await peerConnection.addIceCandidate(data.candidate);
-            } catch (e) {
-                console.error('Error adding received ice candidate', e);
-            }
-        } else {
-            pendingCandidates.push(data.candidate);
-        }
-    });
-
-    // --- Button handler ---
-    document.getElementById('joinCall').onclick = async () => {
-        roomID = document.getElementById('roomID').value;
-        if (!roomID) {
-            alert("Please enter a room ID.");
-            return;
-        }
-
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('localVideo').srcObject = localStream;
-
-        peerConnection = new RTCPeerConnection(servers);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) socket.emit('ice-candidate', { room: roomID, candidate: event.candidate });
-        };
-
-        peerConnection.ontrack = event => {
-            document.getElementById('remoteVideo').srcObject = event.streams[0];
-        };
-
-        // Join the room
-        socket.emit('join', { room: roomID });
-
-        // The first user to click "Join Call" becomes the offerer
-        isOfferer = true;
-    };
 </script>
 
 {% endblock %}

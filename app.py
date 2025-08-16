@@ -195,10 +195,10 @@ def dashboard():
 @app.route("/meeting")
 @login_required
 def meeting():
-    room_id = request.args.get("roomID")
+    room_id = request.args.get("roomID") or request.args.get("room_id")
     if not room_id:
         import random
-        room_id = str(random.randint(10000, 99999))
+        room_id = str(random.randint(100000, 999999))
     return render_template("meeting.html", username=current_user.username, room_id=room_id)
 
 @app.route("/join", methods=["GET", "POST"])
@@ -206,9 +206,12 @@ def meeting():
 def join():
     if request.method == "POST":
         room_id = request.form.get("roomID")
-        return redirect(f"/meeting?roomID={room_id}")
+        if room_id:
+            return redirect(url_for("meeting", roomID=room_id))
+        else:
+            flash("Please enter a room ID", "danger")
 
     return render_template("join.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("cert.pem", "key.pem"))

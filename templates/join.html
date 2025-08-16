@@ -2,11 +2,52 @@
 {% block title %}Join Meeting{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>Join a Meeting</h2>
-    <form method="get" action="/meeting">
-        <input type="text" id="roomID" name="room_id" placeholder="Room ID" required>
-        <button type="submit" class="btn btn-primary">Join</button>
+<div class="text-center">
+    <h2 class="mb-4">Join a Meeting</h2>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="post" action="{{ url_for('join') }}">
+        <div class="form-group mb-4">
+            <label for="roomID" class="form-label text-white">Room ID</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="roomID" 
+                   name="roomID" 
+                   placeholder="Enter the room ID" 
+                   required 
+                   pattern="[0-9A-Za-z]+"
+                   title="Room ID should contain only letters and numbers">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Join Meeting</button>
     </form>
+    
+    <div class="mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light">Back to Dashboard</a>
+    </div>
 </div>
+
+<style>
+    .form-control {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .btn-lg {
+        padding: 12px 30px;
+        font-size: 1.2rem;
+    }
+</style>
 {% endblock %}
