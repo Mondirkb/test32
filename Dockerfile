@@ -18,6 +18,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9
     ./cmake-3.27.9-linux-x86_64.sh --skip-license --prefix=/usr/local && \
     rm cmake-3.27.9-linux-x86_64.sh
 
+# Set the working directory
 WORKDIR /app
 
 # Copy requirements first for caching
@@ -45,8 +46,9 @@ ENV SQLALCHEMY_TRACK_MODIFICATIONS=False
 ENV WTF_CSRF_ENABLED=False
 ENV PORT=8000
 
-# Expose port
-EXPOSE $PORT
+# Expose ports for Flask app and signaling server
+EXPOSE 5000
+EXPOSE 5001
 
-# Run with gunicorn
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT --workers 1 app:app"]
+# Command to run both Flask app and signaling server
+CMD ["sh", "-c", "python app.py & python signaling_server.py"]

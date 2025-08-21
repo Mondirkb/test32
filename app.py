@@ -16,9 +16,9 @@ import base64
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'my-secrets')
-#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:////app/instance/moundir.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:////app/instance/moundir.db')
 # using for local file
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/moundir/PycharmProjects/Meeting_Web_App//moundir.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////home/moundir/PycharmProjects/Meeting_Web_App//moundir.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for Railway
 
