@@ -1,7 +1,7 @@
 FROM python:3.10-slim-bullseye
 
-# Install build and runtime dependencies
-RUN apt-get update && apt-get install -y \
+# Install only the necessary build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     wget \
@@ -12,12 +12,6 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install specific CMake version
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-linux-x86_64.sh && \
-    chmod +x cmake-3.27.9-linux-x86_64.sh && \
-    ./cmake-3.27.9-linux-x86_64.sh --skip-license --prefix=/usr/local && \
-    rm cmake-3.27.9-linux-x86_64.sh
-
 # Set the working directory
 WORKDIR /app
 
@@ -26,8 +20,6 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir numpy==1.26.4 && \
-    pip install --no-cache-dir dlib==19.24.6 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
