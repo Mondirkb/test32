@@ -1,7 +1,7 @@
 FROM python:3.10-slim-bullseye
 
 # Install build and runtime dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     wget \
@@ -11,12 +11,6 @@ RUN apt-get update && apt-get install -y \
     libx11-dev \
     libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Install specific CMake version
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-linux-x86_64.sh && \
-    chmod +x cmake-3.27.9-linux-x86_64.sh && \
-    ./cmake-3.27.9-linux-x86_64.sh --skip-license --prefix=/usr/local && \
-    rm cmake-3.27.9-linux-x86_64.sh
 
 # Set the working directory
 WORKDIR /app
