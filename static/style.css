@@ -1,8 +1,14 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+}
+
 body {
     background: #6a11cb;
     background: -webkit-linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
     background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
-    overflow: hidden;
 }
 
 #root {
@@ -33,6 +39,19 @@ body {
 /* Card styling */
 .card.bg-dark {
     background: rgba(0, 0, 0, 0.85) !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid #444;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.card-body {
+    padding: 0;
 }
 
 /* Form inputs */
@@ -40,6 +59,8 @@ body {
     background: #ffffff;
     color: #333;
     border: 1px solid #6a11cb;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 .form-control:focus {
@@ -71,6 +92,33 @@ body {
     cursor: not-allowed;
 }
 
+.control-btn, .btn {
+    margin: 0 8px 8px 0;
+    padding: 6px 24px;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.control-btn.secondary, .btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.control-btn.danger, .btn-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.control-btn.success, .btn-success {
+    background: #28a745;
+    color: #fff;
+}
+
+.control-btn:hover, .btn:hover {
+    box-shadow: 0 4px 16px rgba(37, 117, 252, 0.2);
+    transform: translateY(-2px);
+}
 
 #photo-preview {
     border: 2px solid #ffffff;
@@ -82,7 +130,6 @@ body {
     color: #ff4d4d;
     font-size: 0.9rem;
 }
-
 
 .alert {
     margin-bottom: 1rem;
@@ -108,14 +155,9 @@ body {
     margin-top: 10px;
 }
 
-
-
-
-
 #year {
     font-weight: bold;
 }
-
 
 #register-page {
     background: linear-gradient(to right, rgba(106, 17, 203, 1), rgba(37, 117, 252, 1));
@@ -132,7 +174,6 @@ body {
     border: 1px solid #6a11cb;
 }
 
-
 .footer {
     position: absolute;
     bottom: 10px;
@@ -142,4 +183,161 @@ body {
     color: white;
     font-size: 0.9rem;
     width: auto;
+}
+
+.meeting-container {
+    min-height: 100vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding-bottom: 40px;
+}
+
+.header {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 20px 0 10px 0;
+    text-align: center;
+}
+
+.video-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    gap: 20px;
+}
+
+.video-wrapper {
+    position: relative;
+    background: #000; /* Black background for better visibility */
+    border-radius: 10px;
+    overflow: hidden; /* Prevents video overflow */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    width: 100%; /* Make the wrapper responsive */
+    height: 100%; /* Ensure it fills the card's height */
+}
+
+.video-wrapper video, .card-body video {
+    background: #000;
+    border-radius: 10px;
+    border: 2px solid #2575fc;
+    width: 100%;
+    
+    min-height: 180px;
+}
+
+.local-video, .remote-video {
+    width: 100%; /* Make the video fill the container width */
+    height: 100%; /* Ensure the video fills the container height */
+    max-height: 300px; /* Set a maximum height to prevent overflow */
+    background: #000; /* Black background for better visibility */
+    border-radius: 10px; /* Rounded corners */
+    border: 2px solid #2575fc; /* Blue border */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+    object-fit: contain; /* Show the entire video content without cropping */
+}
+
+.video-label {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.controls {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.control-btn.primary {
+    background: #28a745;
+    color: white;
+}
+
+.status {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    background: rgba(23, 162, 184, 0.2);
+    color: #17a2b8;
+    border: 1px solid #17a2b8;
+    text-align: center;
+}
+
+.status.success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border-color: #28a745;
+}
+
+.status.warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border-color: #ffc107;
+}
+
+.debug-info {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(40, 40, 40, 0.85);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    z-index: 1000;
+    max-width: 300px;
+    word-break: break-word;
+}
+
+@media (max-width: 1200px) {
+    .local-video, .remote-video {
+        width: 350px;
+        height: 250px;
+    }
+
+    .remote-video {
+        width: 350px;
+        height: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .video-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .local-video, .remote-video {
+        width: 98vw;
+        max-width: 98vw;
+        height: 140px;
+    }
+
+    .container-fluid, .meeting-container {
+        padding: 10px 2px;
+    }
+
+    .card-body video {
+        min-height: 120px;
+    }
+
+    .debug-info {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        max-width: 90vw;
+    }
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 1.2rem;
 }

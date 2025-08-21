@@ -214,4 +214,13 @@ def join():
     return render_template("join.html")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True, ssl_context=("cert.pem", "key.pem"))
+    print("Starting Flask app with HTTPS...")
+    print("Make sure cert.pem and key.pem are in the same directory")
+    
+    # Run with HTTPS
+    app.run(
+        host="0.0.0.0", 
+        port=5000, 
+        debug=True, 
+        ssl_context=("cert.pem", "key.pem")
+    )
