@@ -21,7 +21,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir numpy==1.26.4 && \
-    pip install --no-cache-dir dlib==19.24.6 && \
+    pip install --no-cache-dir opencv-python-headless==4.9.0.80 && \
+    pip install --no-cache-dir face-recognition==1.3.0 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
